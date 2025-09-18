@@ -1,5 +1,3 @@
-
-
 import cv2
 import mediapipe as mp
 import serial
@@ -9,13 +7,12 @@ import time
 arduino = serial.Serial('COM8', 9600)
 time.sleep(2)
 
-# Mediapipe hands setup
+# Setup for Mediapipe hands 
 mp_hands = mp.solutions.hands
 mp_draw = mp.solutions.drawing_utils
 hands = mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.7)
 
-# Open webcam
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(0) # Open webcam
 
 # Define textboxes (x1, y1, x2, y2)
 boxes = {
@@ -38,7 +35,7 @@ while True:
 
     fingertip_x, fingertip_y = None, None
 
-    # Detect hand landmarks
+    # For detecting the hand landmarks
     if result.multi_hand_landmarks:
         for hand_landmarks in result.multi_hand_landmarks:
             mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
@@ -50,7 +47,7 @@ while True:
             # Draw fingertip point
             cv2.circle(frame, (fingertip_x, fingertip_y), 10, (0, 0, 255), -1)
 
-    # Draw textboxes
+    # for drawing the textboxes
     active_led = "0"
     for i, (label, (x1, y1, x2, y2)) in enumerate(boxes.items(), start=1):
         color = (200, 200, 200)  # default box color
@@ -64,8 +61,7 @@ while True:
         cv2.putText(frame, label, (x1 + 20, y1 + 60),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
 
-    # Send command to Arduino
-    arduino.write(active_led.encode())
+    arduino.write(active_led.encode()) # Send command to Arduino
 
     # Show active LED text
     cv2.putText(frame, f"Active LED: {active_led}", (350, 50),
@@ -79,3 +75,4 @@ while True:
 cap.release()
 cv2.destroyAllWindows()
 arduino.close()
+
