@@ -42,7 +42,7 @@ while True:
         cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
         cv2.putText(frame, emotion, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,0,255), 2)
         
-         # **Print detected emotion in terminal**
+         # Print detected emotion in terminal
         print(f"Detected Emotion: {emotion}")
 
     cv2.imshow('Emotion Detection', frame)
@@ -52,3 +52,4 @@ while True:
 
 cap.release()
 cv2.destroyAllWindows()
+
