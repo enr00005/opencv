@@ -1,0 +1,123 @@
+import cv2
+import mediapipe as mp
+import time
+import math
+
+cap = cv2.VideoCapture(0)
+
+mp_hands = mp.solutions.hands
+mp_draw = mp.solutions.drawing_utils
+
+hands = mp_hands.Hands(max_num_hands=1)
+
+buttons = [
+    ["7","8","9","/"],
+    ["4","5","6","*"],
+    ["1","2","3","-"],
+    ["0","C","=","+"]
+]
+
+equation = ""
+delay = 0
+
+while True:
+    success, img = cap.read()
+    img = cv2.flip(img,1)
+
+    h, w, c = img.shape
+
+    rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    result = hands.process(rgb)
+
+    bw, bh = 80, 80
+
+    # Draw buttons
+    for i in range(4):
+        for j in range(4):
+
+            x = 50 + j*bw
+            y = 150 + i*bh
+
+            cv2.rectangle(img,(x,y),(x+bw,y+bh),(255,0,255),3)
+
+            cv2.putText(img,
+                        buttons[i][j],
+                        (x+25,y+55),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        1.5,
+                        (255,255,255),
+                        3)
+
+    # Display area
+    cv2.rectangle(img,(50,50),(370,120),(50,50,50),-1)
+
+    cv2.putText(img,equation,(60,100),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1.5,
+                (0,255,0),
+                3)
+
+    if result.multi_hand_landmarks:
+
+        for handLms in result.multi_hand_landmarks:
+
+            mp_draw.draw_landmarks(img,handLms,mp_hands.HAND_CONNECTIONS)
+
+            # Index finger tip
+            x1 = int(handLms.landmark[8].x * w)
+            y1 = int(handLms.landmark[8].y * h)
+
+            # Thumb tip
+            x2 = int(handLms.landmark[4].x * w)
+            y2 = int(handLms.landmark[4].y * h)
+
+            cv2.circle(img,(x1,y1),10,(0,255,255),-1)
+            cv2.circle(img,(x2,y2),10,(255,255,0),-1)
+
+            # Distance between thumb and index
+            distance = math.hypot(x2-x1, y2-y1)
+
+            # Draw line between fingers
+            cv2.line(img,(x1,y1),(x2,y2),(255,0,0),3)
+
+            for i in range(4):
+                for j in range(4):
+
+                    x = 50 + j*bw
+                    y = 150 + i*bh
+
+                    # Hover detection
+                    if x < x1 < x+bw and y < y1 < y+bh:
+
+                        cv2.rectangle(img,(x,y),(x+bw,y+bh),(0,255,0),-1)
+
+                        value = buttons[i][j]
+
+                        # Click only when fingers pinch
+                        if distance < 40 and delay == 0:
+
+                            if value == "=":
+                                try:
+                                    equation = str(eval(equation))
+                                except:
+                                    equation = "Error"
+
+                            elif value == "C":
+                                equation = ""
+
+                            else:
+                                equation += value
+
+                            delay = 1
+
+        if delay == 1:
+            time.sleep(0.35)
+            delay = 0
+
+    cv2.imshow("Virtual Calculator", img)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
